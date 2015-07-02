@@ -9,6 +9,10 @@ class MarcRecord
     @element = element
   end
 
+  def leader
+    @leader ||= @element.xpath('marc:leader').first.content.to_s
+  end
+
   def id
     datafield_subfield('907', 'a').to_s.gsub(".", "")
   end
@@ -95,12 +99,14 @@ class MarcIngester
 
         marc_record = MarcRecord.new(record_element)
 
+        attributes = {identifier: marc_record.id, title: marc_record.title,
+          metadata: marc_record.metadata, leader: marc_record.leader}
+
+
         if @optimize_for_insert
 
           # In this mode the code tries to insert the record, and falls back to finding and updating
           # the existing record if the insert fails a uniqueness index on the id.
-
-          attributes = {identifier: marc_record.id, title: marc_record.title, metadata: marc_record.metadata}
 
           begin
             Record.create!(attributes)
@@ -116,8 +122,7 @@ class MarcIngester
           # to insert or update.
 
           record = Record.find_or_initialize_by(identifier: marc_record.id)
-          record.title = marc_record.title
-          record.metadata = marc_record.metadata
+          record.attributes = attributes
           record.save!
 
         end
