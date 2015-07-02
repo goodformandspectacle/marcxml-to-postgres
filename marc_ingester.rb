@@ -10,7 +10,7 @@ class MarcRecord
   end
 
   def id
-    datafield_subfield('907', 'a').gsub(".", "")
+    datafield_subfield('907', 'a').to_s.gsub(".", "")
   end
 
   def title
@@ -43,8 +43,14 @@ class MarcRecord
   end
 
   def datafield_subfield(tag_number, subfield_letter)
-    element = datafield(tag_number).xpath('marc:subfield').detect {|e| e.attribute('code').to_s == subfield_letter }
-    element ? element.content : nil
+
+    datafield = datafield(tag_number)
+
+    unless datafield.nil?
+      element = datafield(tag_number).xpath('marc:subfield').detect {|e| e.attribute('code').to_s == subfield_letter }
+      element ? element.content : nil
+    end
+
   end
 
   def datafield(tag_number)
