@@ -43,6 +43,11 @@ class MarcRecord
       @metadata[datafield.attribute('tag').to_s] << field
     end
 
+    control_fields.each do |field|
+      @metadata[field.attribute('tag').to_s] ||= []
+      @metadata[field.attribute('tag').to_s] << field.content.to_s
+    end
+
     @metadata
   end
 
@@ -65,6 +70,10 @@ class MarcRecord
 
   def datafields
     @datafields ||= @element.xpath('marc:datafield')
+  end
+
+  def control_fields
+    @control_fields ||= @element.xpath('marc:controlfield')
   end
 
 end
