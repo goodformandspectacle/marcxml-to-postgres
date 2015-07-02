@@ -68,7 +68,8 @@ end
 
 class MarcIngester
 
-  def initialize
+  def initialize(optimize_for_insert = true)
+    @optimize_for_insert = optimize_for_insert
   end
 
   def ingest!
@@ -94,10 +95,32 @@ class MarcIngester
 
         marc_record = MarcRecord.new(record_element)
 
-        record = Record.find_or_initialize_by(identifier: marc_record.id)
-        record.title = marc_record.title
-        record.metadata = marc_record.metadata
-        record.save!
+        if @optimize_for_insert
+
+          # In this mode the code tries to insert the record, and falls back to finding and updating
+          # the existing record if the insert fails a uniqueness index on the id.
+
+          attributes = {identifier: marc_record.id, title: marc_record.title, metadata: marc_record.metadata}
+
+          begin
+            Record.create!(attributes)
+          rescue ActiveRecord::RecordNotUnique
+            record = Record.find_by!(identifier: marc_record.id)
+            record.attributes = attributes
+            record.save!
+          end
+
+        else
+
+          # In this mode the code always looks for an existing record first, before deciding whether
+          # to insert or update.
+
+          record = Record.find_or_initialize_by(identifier: marc_record.id)
+          record.title = marc_record.title
+          record.metadata = marc_record.metadata
+          record.save!
+
+        end
 
       end
 
