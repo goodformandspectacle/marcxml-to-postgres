@@ -12,6 +12,7 @@ end
 
 desc "Import records into Elasticsearch"
 task :import do
+  $stdout.sync = true
   ElasticsearchImporter.new.import!
 end
 
