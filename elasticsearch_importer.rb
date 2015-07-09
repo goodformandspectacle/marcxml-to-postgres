@@ -6,8 +6,11 @@ class ElasticsearchImporter
     establish_connection
 
     logging = false
+    index_name = 'library'
 
     client = Elasticsearch::Client.new url: ENV.fetch('SEARCHBOX_URL'), log: logging
+
+    client.indices.create index: index_name
 
     total = 0
     puts "Importing records into Elasticsearch…"
@@ -20,7 +23,7 @@ class ElasticsearchImporter
         records.map { |record|
           {
             index: {
-              _index: 'library',
+              _index: index_name,
               _type:  'record',
               _id:    record.identifier,
               data:   record.metadata.merge(record.attributes.slice(:title, :leader))
