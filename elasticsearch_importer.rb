@@ -4,7 +4,10 @@ require_relative 'models/record'
 class ElasticsearchImporter
   def import!
     establish_connection
-    client = Elasticsearch::Client.new url: ENV.fetch('SEARCHBOX_URL')
+
+    logging = false
+
+    client = Elasticsearch::Client.new url: ENV.fetch('SEARCHBOX_URL'), log: logging
 
     total = 0
     puts "Importing records into Elasticsearch…"
