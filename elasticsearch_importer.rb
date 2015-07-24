@@ -10,23 +10,51 @@ class ElasticsearchImporter
 
     client = Elasticsearch::Client.new url: ENV.fetch('SEARCHBOX_URL'), log: logging
 
-    client.indices.create index: index_name
+    client.indices.delete index: index_name
+
+    client.indices.create index: index_name,
+      body: {
+        mappings: {
+          record: {
+            properties: {
+              title: {type: 'string', analyzer: :english},
+              year: {type: 'string', index: :not_analyzed},
+              subjects: {
+                properties: {
+                  id: { type: 'string', index: :not_analyzed},
+                  label: { type: 'string', index: :not_analyzed},
+                  scheme: { type: 'string', index: :not_analyzed}
+                }
+              },
+              authors: {
+                properties: {
+                  id: { type: 'string', index: :not_analyzed},
+                  name: { type: 'string', index: :not_analyzed}
+                }
+              }
+            }
+          }
+        }
+      }
 
     total = 0
+
+
     puts "Importing records into Elasticsearch…"
 
-    Record.find_in_batches do |records|
+    Record.select(:id, :identifier, :title, :year, :metadata).find_in_batches do |records|
       puts "Importing records #{total + 1}–#{total + records.length}…"
       total = total + records.length
 
       body =
         records.map { |record|
+
           {
             index: {
               _index: index_name,
               _type:  'record',
               _id:    record.identifier,
-              data:   record.metadata.merge(record.attributes.slice(:title, :leader))
+              data:   record.to_elasticsearch
             }
           }
         }
